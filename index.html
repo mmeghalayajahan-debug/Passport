@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureVerify - Bento Passport Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0" rel="stylesheet" />
+  <style>
+    /* Custom scanline animation for the bento passport photo */
+    @keyframes scan {
+      0% { top: 0%; }
+      50% { top: 100%; }
+      100% { top: 0%; }
+    }
+    .scan-line {
+      animation: scan 4s linear infinite;
+    }
+    /* Hide scrollbar for clean dashboard look */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1C1B1F;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #49454F;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #D0BCFF;
+    }
+  </style>
+</head>
+<body class="h-full bg-[#1C1B1F] text-[#E6E1E5] font-sans antialiased overflow-hidden flex flex-col">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-4 border-b border-[#49454F]/40 bg-[#211F26]">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 flex items-center justify-center rounded-full bg-[#2B2930] border border-[#49454F]">
+        <span class="material-symbols-outlined text-[#D0BCFF]">security</span>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+          SecureVerify <span class="text-[10px] bg-[#D0BCFF] text-[#381E72] px-1.5 py-0.5 rounded font-mono font-bold">BENTO v2.1</span>
+        </h1>
+        <p class="text-xs text-[#CAC4D0] font-mono">INTELLIGENT PASSPORT VALIDATION SYSTEM</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-3">
+      <!-- Quick Status -->
+      <span class="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Terminal Connected
+      </span>
+      <button onclick="toggleRegisterModal(true)" class="flex items-center gap-2 bg-[#D0BCFF] text-[#381E72] hover:bg-[#E8DEF8] transition-all px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+        <span class="material-symbols-outlined text-sm">add_card</span>
+        Register Passport
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workstation Layout -->
+  <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+    
+    <!-- Left Sidebar: Passport Database List -->
+    <section class="w-full md:w-80 border-r border-[#49454F]/40 bg-[#211F26]/50 flex flex-col h-1/2 md:h-full">
+      <!-- Search Box -->
+      <div class="p-4 border-b border-[#49454F]/40">
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[#CAC4D0] text-xl">search</span>
+          <input type="text" id="searchInput" oninput="filterPassports()" placeholder="Search Passport / Name..." 
+                 class="w-full h-11 bg-[#2B2930] rounded-xl pl-11 pr-4 text-sm text-[#E6E1E5] focus:outline-none focus:ring-2 focus:ring-[#D0BCFF] border border-[#49454F]">
+        </div>
+      </div>
+
+      <!-- Passport List Scroll Area -->
+      <div class="flex-1 overflow-y-auto p-3 space-y-2" id="passportList">
+        <!-- Dynamic list items added here -->
+      </div>
+    </section>
+
+    <!-- Right Workspace: Bento Details View -->
+    <section class="flex-1 flex flex-col overflow-y-auto p-4 md:p-6 bg-[#1C1B1F]">
+      
+      <!-- Top Alert Stamp Panel -->
+      <div id="statusAlertPanel" class="mb-4">
+        <!-- Dynamic status banner goes here -->
+      </div>
+
+      <!-- Bento Grid Dashboard -->
+      <div id="detailsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <!-- Grid Item 1: Full Name (Span 2) -->
+        <div class="md:col-span-2 bg-[#2B2930] border border-[#49454F] p-5 rounded-3xl flex flex-col justify-center min-h-[100px] shadow-sm">
+          <p class="text-[#D0BCFF] text-[10px] font-bold uppercase tracking-widest font-mono mb-1">Full Name / Nom Complet</p>
+          <h2 id="fullNameVal" class="text-2xl md:text-3xl font-black text-white tracking-tight"></h2>
+        </div>
+
+        <!-- Grid Item 2: Passport No. -->
+        <div class="bg-[#2B2930] border border-[#49454F] p-5 rounded-3xl flex flex-col justify-center min-h-[100px] shadow-sm">
+          <p class="text-[#D0BCFF] text-[10px] font-bold uppercase tracking-widest font-mono mb-1">Passport No. / N° Passeport</p>
+          <p id="passportNoVal" class="text-xl font-bold font-mono text-white"></p>
+        </div>
+
+        <!-- Grid Item 3: Nationality -->
+        <div class="bg-[#2B2930] border border-[#49454F] p-5 rounded-3xl flex flex-col justify-center min-h-[100px] shadow-sm">
+          <p class="text-[#D0BCFF] text-[10px] font-bold uppercase tracking-widest font-mono mb-1">Nationality / Nationalité</p>
+          <p id="nationalityVal" class="text-lg font-semibold text-white"></p>
+        </div>
+
+        <!-- Grid Item 4: Expiry Date -->
+        <div class="bg-[#2B2930] border border-[#49454F] p-5 rounded-3xl flex flex-col justify-center min-h-[100px] shadow-sm">
+          <p class="text-[#D0BCFF] text-[10px] font-bold uppercase tracking-widest font-mono mb-1">Expiry / Expiration</p>
+          <p id="expiryVal" class="text-lg font-semibold text-white"></p>
+        </div>
+
+        <!-- Grid Item 5: Gender & DOB -->
+        <div class="bg-[#2B2930] border border-[#49454F] p-5 rounded-3xl flex flex-col justify-center min-h-[100px] shadow-sm">
+          <p class="text-[#D0BCFF] text-[10px] font-bold uppercase tracking-widest font-mono mb-1">Gender & DOB / Sexe & Naissance</p>
+          <p id="genderDobVal" class="text-base font-semibold font-mono text-white"></p>
+        </div>
+
+        <!-- Grid Item 6: Associated Address & Scan (Span 2) -->
+        <div class="md:col-span-2 bg-[#2B2930] border border-[#49454F] p-5 rounded-3xl flex flex-col justify-between shadow-sm">
+          <div>
+            <p class="text-[#D0BCFF] text-[10px] font-bold uppercase tracking-widest font-mono mb-2">Registered Address / Adresse Enregistrée</p>
+            <p id="addressVal" class="text-sm text-[#E6E1E5] leading-relaxed"></p>
+          </div>
+          
+          <!-- Embedded Scanner Interface -->
+          <div class="mt-4 bg-[#1C1B1F] rounded-2xl h-44 border border-dashed border-[#49454F] relative overflow-hidden flex flex-col items-center justify-center">
+            <!-- Aesthetic Holographic Laser Scan Line -->
+            <div class="absolute left-0 w-full h-[2px] bg-[#D0BCFF]/60 scan-line z-20 shadow-[0_0_10px_#D0BCFF]"></div>
+            
+            <!-- Graphic background mesh -->
+            <div class="absolute inset-0 bg-cover bg-center opacity-10 grayscale" style="background-image: url('https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=400')"></div>
+            
+            <!-- Icon/Status details -->
+            <div class="z-10 flex flex-col items-center text-center px-4">
+              <span class="material-symbols-outlined text-3xl text-[#D0BCFF] mb-1 animate-pulse">qr_code_scanner</span>
+              <span class="text-xs font-mono font-bold tracking-wider text-white">SECURE SCANNER ENGAGED</span>
+              <span id="scanFileName" class="text-[10px] font-mono text-[#CAC4D0] mt-0.5">SCAN_IMG_SECURE.JPG</span>
+            </div>
+
+            <!-- Absolute Labels -->
+            <div class="absolute bottom-3 right-3 bg-[#D0BCFF] text-[#381E72] text-[9px] px-2 py-0.5 rounded font-bold font-mono tracking-wider">
+              ENCRYPTED
+            </div>
+            <div class="absolute top-3 left-3 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span class="text-[8px] font-mono text-[#CAC4D0]">FEED_ACTIVE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid Item 7: Machine Readable Zone (MRZ) (Span 1) -->
+        <div class="bg-[#2B2930] border border-[#49454F] p-5 rounded-3xl flex flex-col justify-between shadow-sm">
+          <div>
+            <p class="text-[#D0BCFF] text-[10px] font-bold uppercase tracking-widest font-mono mb-2">Machine Readable Zone / Zone Optronique</p>
+            <div class="bg-black/30 rounded-xl p-3 border border-[#49454F]/40 font-mono text-[10px] leading-normal tracking-widest text-[#D0BCFF]/90 space-y-1">
+              <div id="mrzLine1" class="truncate"></div>
+              <div id="mrzLine2" class="truncate"></div>
+            </div>
+          </div>
+          
+          <div class="mt-4 pt-3 border-t border-[#49454F]/40 flex items-center justify-between text-[10px] text-[#CAC4D0] font-mono">
+            <span>SPEC: ICAO DOC 9303</span>
+            <span class="text-[#D0BCFF] font-bold">TYPE TD3</span>
+          </div>
+        </div>
+
+        <!-- Grid Item 8: Action Controls Panel (Span 3) -->
+        <div class="md:col-span-3 bg-[#2B2930] border border-[#49454F] p-4 rounded-3xl flex flex-col sm:flex-row gap-3 items-center justify-between shadow-sm">
+          <button id="deleteBtn" onclick="deleteActivePassport()" class="w-full sm:w-auto px-5 py-2.5 rounded-2xl border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2 text-xs font-bold font-mono">
+            <span class="material-symbols-outlined text-sm">delete</span> DE-REGISTER CREDENTIAL
+          </button>
+          
+          <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto" id="toggleBlockWrapper">
+            <!-- Dynamic button injected here -->
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Register Passport Modal -->
+  <div id="registerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-[#2B2930] border border-[#49454F] rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-[#49454F]/60 flex items-center justify-between bg-[#211F26]">
+        <h3 class="text-white font-bold tracking-tight text-base flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#D0BCFF]">add_card</span> Register New Passport
+        </h3>
+        <button onclick="toggleRegisterModal(false)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-white">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Modal Body (Form) -->
+      <form id="registerForm" onsubmit="registerNewPassport(event)" class="p-6 overflow-y-auto space-y-4">
+        
+        <div>
+          <label class="block text-xs font-bold text-[#D0BCFF] font-mono uppercase tracking-wider mb-1.5">Full Name / Nom Complet</label>
+          <input type="text" id="regName" required placeholder="e.g. JOHNATHAN DOE"
+                 class="w-full h-11 bg-[#1C1B1F] border border-[#49454F] rounded-xl px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#D0BCFF]">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-[#D0BCFF] font-mono uppercase tracking-wider mb-1.5">Passport Number</label>
+            <input type="text" id="regPassportNo" required placeholder="e.g. P12345678"
+                   class="w-full h-11 bg-[#1C1B1F] border border-[#49454F] rounded-xl px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#D0BCFF] font-mono uppercase">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#D0BCFF] font-mono uppercase tracking-wider mb-1.5">Nationality (3-Letter Code)</label>
+            <input type="text" id="regNationality" required placeholder="e.g. USA / GBR" maxlength="3"
+                   class="w-full h-11 bg-[#1C1B1F] border border-[#49454F] rounded-xl px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#D0BCFF] font-mono uppercase">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-[#D0BCFF] font-mono uppercase tracking-wider mb-1.5">Gender</label>
+            <select id="regGender" required
+                    class="w-full h-11 bg-[#1C1B1F] border border-[#49454F] rounded-xl px-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#D0BCFF]">
+              <option value="M">MALE (M)</option>
+              <option value="F">FEMALE (F)</option>
+              <option value="X">NON-BINARY (X)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#D0BCFF] font-mono uppercase tracking-wider mb-1.5">Date of Birth</label>
+            <input type="text" id="regDob" required placeholder="e.g. 24 SEP 1992"
+                   class="w-full h-11 bg-[#1C1B1F] border border-[#49454F] rounded-xl px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#D0BCFF] font-mono">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-[#D0BCFF] font-mono uppercase tracking-wider mb-1.5">Issue Date</label>
+            <input type="text" id="regIssueDate" required placeholder="e.g. 12 OCT 2019"
+                   class="w-full h-11 bg-[#1C1B1F] border border-[#49454F] rounded-xl px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#D0BCFF] font-mono">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#D0BCFF] font-mono uppercase tracking-wider mb-1.5">Expiry Date</label>
+            <input type="text" id="regExpiryDate" required placeholder="e.g. 12 OCT 2029"
+                   class="w-full h-11 bg-[#1C1B1F] border border-[#49454F] rounded-xl px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#D0BCFF] font-mono">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-[#D0BCFF] font-mono uppercase tracking-wider mb-1.5">Registered Residential Address</label>
+          <textarea id="regAddress" required rows="2" placeholder="e.g. 742 Evergreen Terrace, Springfield, OR"
+                    class="w-full bg-[#1C1B1F] border border-[#49454F] rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#D0BCFF] resize-none"></textarea>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="pt-4 border-t border-[#49454F]/60 flex gap-3">
+          <button type="button" onclick="toggleRegisterModal(false)" class="flex-1 h-11 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-white font-bold text-sm">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 h-11 rounded-xl bg-[#D0BCFF] hover:bg-[#E8DEF8] transition-colors text-[#381E72] font-bold text-sm">
+            Save Record
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Flag & Block Modal Dialog -->
+  <div id="flagModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-[#2B2930] border border-red-500/50 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden p-6">
+      <div class="flex items-center gap-3 text-red-400 mb-3">
+        <span class="material-symbols-outlined text-3xl">block</span>
+        <h4 class="font-bold text-lg text-white">Flag and Block Passport</h4>
+      </div>
+      <p class="text-xs text-[#CAC4D0] leading-relaxed mb-4">
+        Specify the official reason for locking this credential from crossing state borders or accessing official checkpoints.
+      </p>
+
+      <div class="space-y-3">
+        <button onclick="applyFlagReason('International Hold')" class="w-full text-left bg-[#1C1B1F] hover:bg-[#D0BCFF]/10 hover:border-[#D0BCFF] border border-[#49454F] p-3 rounded-xl transition-all">
+          <p class="text-xs font-bold text-white">International Hold</p>
+          <p class="text-[10px] text-[#CAC4D0]">Requires diplomatic check or security intervention.</p>
+        </button>
+        
+        <button onclick="applyFlagReason('Reported Stolen / Lost')" class="w-full text-left bg-[#1C1B1F] hover:bg-[#D0BCFF]/10 hover:border-[#D0BCFF] border border-[#49454F] p-3 rounded-xl transition-all">
+          <p class="text-xs font-bold text-white">Reported Stolen / Lost</p>
+          <p class="text-[10px] text-[#CAC4D0]">Credential has been deactivated by owner.</p>
+        </button>
+        
+        <button onclick="applyFlagReason('Suspicious Alteration')" class="w-full text-left bg-[#1C1B1F] hover:bg-[#D0BCFF]/10 hover:border-[#D0BCFF] border border-[#49454F] p-3 rounded-xl transition-all">
+          <p class="text-xs font-bold text-white">Suspicious Alteration</p>
+          <p class="text-[10px] text-[#CAC4D0]">Mismatched biometric scan or visual signature errors.</p>
+        </button>
+      </div>
+
+      <button type="button" onclick="toggleFlagModal(false)" class="mt-4 w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-white font-bold text-xs font-mono">
+        CANCEL ACTION
+      </button>
+    </div>
+  </div>
+
+  <!-- JavaScript to Power the Application Local State -->
+  <script>
+    // Mock Database Initialization
+    const defaultPassports = [
+      {
+        passportNumber: "P82910442",
+        fullName: "ALEJANDRO VÁSQUEZ",
+        nationality: "SPAIN",
+        gender: "M",
+        dateOfBirth: "24 SEP 1992",
+        issueDate: "12 OCT 2019",
+        expiryDate: "12 OCT 2029",
+        address: "742 Evergreen Terrace, Springfield, OR 97403, USA",
+        photoDrawableName: "doe_photo",
+        isFlagged: true,
+        flagReason: "International Hold"
+      },
+      {
+        passportNumber: "P91024823",
+        fullName: "JANE SMITH",
+        nationality: "UNITED KINGDOM",
+        gender: "F",
+        dateOfBirth: "05 MAY 1994",
+        issueDate: "18 FEB 2021",
+        expiryDate: "18 FEB 2031",
+        address: "10 Downing Street, Westminster, London, SW1A 2AA, UK",
+        photoDrawableName: "smith_photo",
+        isFlagged: false,
+        flagReason: ""
+      },
+      {
+        passportNumber: "P30491823",
+        fullName: "JOHNATHAN DOE",
+        nationality: "UNITED STATES",
+        gender: "M",
+        dateOfBirth: "14 AUG 1988",
+        issueDate: "20 APR 2017",
+        expiryDate: "20 APR 2027",
+        address: "1600 Pennsylvania Ave NW, Washington, DC 20500, USA",
+        photoDrawableName: "doe_photo",
+        isFlagged: false,
+        flagReason: ""
+      }
+    ];
+
+    let passports = [];
+    let selectedPassportNo = "";
+
+    // Load list of passports from localStorage or initialize defaults
+    function initDatabase() {
+      const stored = localStorage.getItem("secure_verify_passports");
+      if (stored) {
+        passports = JSON.parse(stored);
+      } else {
+        passports = defaultPassports;
+        saveToLocalStorage();
+      }
+      
+      if (passports.length > 0) {
+        selectedPassportNo = passports[0].passportNumber;
+      }
+      
+      renderPassportList();
+      renderActivePassport();
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem("secure_verify_passports", JSON.stringify(passports));
+    }
+
+    // Render left sidebar
+    function renderPassportList() {
+      const listEl = document.getElementById("passportList");
+      listEl.innerHTML = "";
+
+      passports.forEach(p => {
+        const isActive = p.passportNumber === selectedPassportNo;
+        const activeClass = isActive ? "bg-[#2B2930] border-[#D0BCFF]" : "bg-transparent border-transparent hover:bg-white/5";
+        const flaggedIndicator = p.isFlagged ? "border-l-4 border-l-red-500" : "border-l-4 border-l-emerald-500";
+
+        const card = document.createElement("div");
+        card.className = `p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${activeClass} ${flaggedIndicator}`;
+        card.onclick = () => {
+          selectedPassportNo = p.passportNumber;
+          renderPassportList();
+          renderActivePassport();
+        };
+
+        card.innerHTML = `
+          <div class="min-w-0">
+            <h5 class="text-sm font-bold text-white truncate">${p.fullName}</h5>
+            <p class="text-xs text-[#CAC4D0] font-mono mt-0.5">${p.passportNumber} • ${p.nationality.substring(0, 3).toUpperCase()}</p>
+          </div>
+          <span class="material-symbols-outlined text-lg ${p.isFlagged ? 'text-red-400' : 'text-emerald-400'}">
+            ${p.isFlagged ? 'block' : 'check_circle'}
+          </span>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    // Render dynamic bento grid content
+    function renderActivePassport() {
+      const p = passports.find(item => item.passportNumber === selectedPassportNo);
+      
+      if (!p) {
+        // Render Empty state
+        document.getElementById("detailsGrid").classList.add("hidden");
+        document.getElementById("statusAlertPanel").innerHTML = `
+          <div class="bg-[#2B2930] border border-[#49454F] rounded-3xl p-8 text-center">
+            <span class="material-symbols-outlined text-5xl text-[#D0BCFF] mb-2">dashboard_customize</span>
+            <h4 class="text-lg font-bold text-white">No Passport Loaded</h4>
+            <p class="text-xs text-[#CAC4D0] max-w-sm mx-auto mt-1">
+              Select an existing passport credential from the database, or register a new verification card to initiate the security review.
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      document.getElementById("detailsGrid").classList.remove("hidden");
+
+      // Set Texts
+      document.getElementById("fullNameVal").innerText = p.fullName;
+      document.getElementById("passportNoVal").innerText = p.passportNumber;
+      document.getElementById("nationalityVal").innerText = `${p.nationality.toUpperCase()} (${p.nationality.substring(0, 3).toUpperCase()})`;
+      document.getElementById("expiryVal").innerText = p.expiryDate;
+      document.getElementById("genderDobVal").innerText = `${p.gender} • ${p.dateOfBirth}`;
+      document.getElementById("addressVal").innerText = p.address;
+      document.getElementById("scanFileName").innerText = p.photoDrawableName.toUpperCase() + ".JPG";
+
+      // MRZ Lines Generator
+      const mtype = p.photoDrawableName.includes("doe") ? "P<USADOE<<JOHNATHAN<<<<<<<<<<<<<<<<<<<<<<<<<" : "P<GBRSMITH<<JANE<<<<<<<<<<<<<<<<<<<<<<<<<<<<<";
+      const mline1 = mtype.substring(0, 44);
+      const pNumPadded = p.passportNumber.padEnd(9, '<');
+      const natCode = p.nationality.substring(0,3).toUpperCase();
+      const mline2 = `${pNumPadded}${natCode}920924M3501017<<<<<<<<<<<<<<<42`.substring(0, 44);
+      
+      document.getElementById("mrzLine1").innerText = mline1;
+      document.getElementById("mrzLine2").innerText = mline2;
+
+      // Status Alert Header Rendering
+      const statusPanel = document.getElementById("statusAlertPanel");
+      if (p.isFlagged) {
+        statusPanel.innerHTML = `
+          <div class="bg-[#8C1D18] text-[#F9DEDC] px-5 py-4 rounded-3xl flex items-center gap-4 shadow-sm border border-red-950">
+            <span class="material-symbols-outlined text-3xl shrink-0">warning</span>
+            <div>
+              <p class="text-sm font-bold uppercase tracking-wider font-mono">Entry Denied</p>
+              <p class="text-xs opacity-90 font-mono">This passport is flagged: ${p.flagReason.toUpperCase()}</p>
+            </div>
+          </div>
+        `;
+      } else {
+        statusPanel.innerHTML = `
+          <div class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-5 py-4 rounded-3xl flex items-center gap-4 shadow-sm">
+            <span class="material-symbols-outlined text-3xl text-emerald-400 shrink-0">check_circle</span>
+            <div>
+              <p class="text-sm font-bold uppercase tracking-wider font-mono">Passport Active & Verified</p>
+              <p class="text-xs opacity-90 font-mono">Secure cryptographic identity verification passed. All checks normal.</p>
+            </div>
+          </div>
+        `;
+      }
+
+      // Actions Injected
+      const blockWrapper = document.getElementById("toggleBlockWrapper");
+      if (p.isFlagged) {
+        blockWrapper.innerHTML = `
+          <button onclick="unblockPassport()" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 transition-colors text-white px-6 py-2.5 rounded-2xl text-xs font-bold font-mono flex items-center justify-center gap-2 shadow-lg">
+            <span class="material-symbols-outlined text-sm">lock_open</span> UNBLOCK PASSPORT
+          </button>
+        `;
+      } else {
+        blockWrapper.innerHTML = `
+          <button onclick="toggleFlagModal(true)" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 transition-colors text-white px-6 py-2.5 rounded-2xl text-xs font-bold font-mono flex items-center justify-center gap-2 shadow-lg">
+            <span class="material-symbols-outlined text-sm">block</span> FLAG & BLOCK ENTRY
+          </button>
+        `;
+      }
+    }
+
+    // Filter list by search query
+    function filterPassports() {
+      const q = document.getElementById("searchInput").value.toLowerCase();
+      const stored = localStorage.getItem("secure_verify_passports");
+      const fullDb = stored ? JSON.parse(stored) : defaultPassports;
+      
+      passports = fullDb.filter(p => 
+        p.fullName.toLowerCase().includes(q) || 
+        p.passportNumber.toLowerCase().includes(q)
+      );
+
+      if (passports.length > 0 && !passports.some(item => item.passportNumber === selectedPassportNo)) {
+        selectedPassportNo = passports[0].passportNumber;
+      }
+      
+      renderPassportList();
+      renderActivePassport();
+    }
+
+    // Toggle Modal dialogs
+    function toggleRegisterModal(show) {
+      const modal = document.getElementById("registerModal");
+      if (show) modal.classList.remove("hidden");
+      else modal.classList.add("hidden");
+    }
+
+    function toggleFlagModal(show) {
+      const modal = document.getElementById("flagModal");
+      if (show) modal.classList.remove("hidden");
+      else modal.classList.add("hidden");
+    }
+
+    // Add new Passport
+    function registerNewPassport(e) {
+      e.preventDefault();
+      const num = document.getElementById("regPassportNo").value.toUpperCase();
+      const name = document.getElementById("regName").value.toUpperCase();
+      const nation = document.getElementById("regNationality").value.toUpperCase();
+      const gender = document.getElementById("regGender").value;
+      const dob = document.getElementById("regDob").value.toUpperCase();
+      const issue = document.getElementById("regIssueDate").value.toUpperCase();
+      const expiry = document.getElementById("regExpiryDate").value.toUpperCase();
+      const address = document.getElementById("regAddress").value;
+
+      const newRecord = {
+        passportNumber: num,
+        fullName: name,
+        nationality: nation,
+        gender: gender,
+        dateOfBirth: dob,
+        issueDate: issue,
+        expiryDate: expiry,
+        address: address,
+        photoDrawableName: "smith_photo",
+        isFlagged: false,
+        flagReason: ""
+      };
+
+      // Read complete DB from localStorage to avoid search-filtered updates
+      const stored = localStorage.getItem("secure_verify_passports");
+      const fullList = stored ? JSON.parse(stored) : [...defaultPassports];
+      
+      fullList.unshift(newRecord);
+      passports = fullList;
+      selectedPassportNo = num;
+      
+      saveToLocalStorage();
+      toggleRegisterModal(false);
+      document.getElementById("registerForm").reset();
+      
+      // Update view
+      document.getElementById("searchInput").value = "";
+      renderPassportList();
+      renderActivePassport();
+    }
+
+    // Flag and block entry
+    function applyFlagReason(reason) {
+      const p = passports.find(item => item.passportNumber === selectedPassportNo);
+      if (p) {
+        p.isFlagged = true;
+        p.flagReason = reason;
+        saveToLocalStorage();
+        toggleFlagModal(false);
+        renderPassportList();
+        renderActivePassport();
+      }
+    }
+
+    // Unblock entry
+    function unblockPassport() {
+      const p = passports.find(item => item.passportNumber === selectedPassportNo);
+      if (p) {
+        p.isFlagged = false;
+        p.flagReason = "";
+        saveToLocalStorage();
+        renderPassportList();
+        renderActivePassport();
+      }
+    }
+
+    // De-register/delete passport
+    function deleteActivePassport() {
+      if (confirm("Are you sure you want to completely de-register this passport from SecureVerify database?")) {
+        passports = passports.filter(item => item.passportNumber !== selectedPassportNo);
+        saveToLocalStorage();
+        if (passports.length > 0) {
+          selectedPassportNo = passports[0].passportNumber;
+        } else {
+          selectedPassportNo = "";
+        }
+        renderPassportList();
+        renderActivePassport();
+      }
+    }
+
+    // Initialize application
+    window.onload = initDatabase;
+  </script>
+</body>
+</html>
