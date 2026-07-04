@@ -1,0 +1,6 @@
+{
+  "name": "SecureVerify",
+  "description": "A secure, robust passport verification app designed to lookup passport details, view biodata, and instantly flag blocked or restricted credentials.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
