@@ -135,7 +135,7 @@
             <div class="absolute left-0 w-full h-[2px] bg-[#D0BCFF]/60 scan-line z-20 shadow-[0_0_10px_#D0BCFF]"></div>
             
             <!-- Graphic background mesh -->
-            <div class="absolute inset-0 bg-cover bg-center opacity-10 grayscale" style="background-image: url('https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=400')"></div>
+            <div id="scannerBg" class="absolute inset-0 bg-cover bg-center opacity-20 grayscale" style="background-image: url('https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=400')"></div>
             
             <!-- Icon/Status details -->
             <div class="z-10 flex flex-col items-center text-center px-4">
@@ -310,6 +310,19 @@
     // Mock Database Initialization
     const defaultPassports = [
       {
+        passportNumber: "A07176865",
+        fullName: "MD KAMAL HOSEN",
+        nationality: "BANGLADESH",
+        gender: "M",
+        dateOfBirth: "10 FEB 1983",
+        issueDate: "13 APR 2023",
+        expiryDate: "12 APR 2033",
+        address: "KACHUA, SAKHIPUR, KACHUA - 1951, TANGAIL",
+        photoDrawableName: "img_passport_kamal_hosen",
+        isFlagged: false,
+        flagReason: ""
+      },
+      {
         passportNumber: "P82910442",
         fullName: "ALEJANDRO VÁSQUEZ",
         nationality: "SPAIN",
@@ -358,6 +371,23 @@
       const stored = localStorage.getItem("secure_verify_passports");
       if (stored) {
         passports = JSON.parse(stored);
+        // Force add MD KAMAL HOSEN if not present in cached passports
+        if (!passports.some(p => p.passportNumber === "A07176865")) {
+          passports.unshift({
+            passportNumber: "A07176865",
+            fullName: "MD KAMAL HOSEN",
+            nationality: "BANGLADESH",
+            gender: "M",
+            dateOfBirth: "10 FEB 1983",
+            issueDate: "13 APR 2023",
+            expiryDate: "12 APR 2033",
+            address: "KACHUA, SAKHIPUR, KACHUA - 1951, TANGAIL",
+            photoDrawableName: "img_passport_kamal_hosen",
+            isFlagged: false,
+            flagReason: ""
+          });
+          saveToLocalStorage();
+        }
       } else {
         passports = defaultPassports;
         saveToLocalStorage();
@@ -437,14 +467,36 @@
       document.getElementById("scanFileName").innerText = p.photoDrawableName.toUpperCase() + ".JPG";
 
       // MRZ Lines Generator
-      const mtype = p.photoDrawableName.includes("doe") ? "P<USADOE<<JOHNATHAN<<<<<<<<<<<<<<<<<<<<<<<<<" : "P<GBRSMITH<<JANE<<<<<<<<<<<<<<<<<<<<<<<<<<<<<";
-      const mline1 = mtype.substring(0, 44);
-      const pNumPadded = p.passportNumber.padEnd(9, '<');
-      const natCode = p.nationality.substring(0,3).toUpperCase();
-      const mline2 = `${pNumPadded}${natCode}920924M3501017<<<<<<<<<<<<<<<42`.substring(0, 44);
+      let mline1 = "";
+      let mline2 = "";
+      if (p.passportNumber === "A07176865") {
+        mline1 = "P<BGDHOSEN<<MD<KAMAL<<<<<<<<<<<<<<<<<<<<<<<<<";
+        mline2 = "A071768650BGD8302102M33041233932850200000266";
+      } else {
+        const mtype = p.photoDrawableName.includes("doe") ? "P<USADOE<<JOHNATHAN<<<<<<<<<<<<<<<<<<<<<<<<<" : "P<GBRSMITH<<JANE<<<<<<<<<<<<<<<<<<<<<<<<<<<<<";
+        mline1 = mtype.substring(0, 44);
+        const pNumPadded = p.passportNumber.padEnd(9, '<');
+        const natCode = p.nationality.substring(0, 3).toUpperCase();
+        mline2 = `${pNumPadded}${natCode}920924M3501017<<<<<<<<<<<<<<<42`.substring(0, 44);
+      }
       
       document.getElementById("mrzLine1").innerText = mline1;
       document.getElementById("mrzLine2").innerText = mline2;
+
+      // Update Scanner Background Image
+      const scannerBg = document.getElementById("scannerBg");
+      if (scannerBg) {
+        if (p.photoDrawableName === "img_passport_kamal_hosen") {
+          scannerBg.style.backgroundImage = "url('./img_passport_kamal_hosen.jpg')";
+          scannerBg.style.opacity = "0.45";
+        } else if (p.photoDrawableName.includes("doe")) {
+          scannerBg.style.backgroundImage = "url('https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=400')";
+          scannerBg.style.opacity = "0.2";
+        } else {
+          scannerBg.style.backgroundImage = "url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400')";
+          scannerBg.style.opacity = "0.2";
+        }
+      }
 
       // Status Alert Header Rendering
       const statusPanel = document.getElementById("statusAlertPanel");

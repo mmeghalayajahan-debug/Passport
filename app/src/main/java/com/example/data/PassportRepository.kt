@@ -28,6 +28,19 @@ class PassportRepository(private val passportDao: PassportDao) {
         if (currentList.isEmpty()) {
             val seedData = listOf(
                 PassportRecord(
+                    passportNumber = "A07176865",
+                    fullName = "MD KAMAL HOSEN",
+                    gender = "M",
+                    dateOfBirth = "10 FEB 1983",
+                    nationality = "Bangladeshi",
+                    issueDate = "13 APR 2023",
+                    expiryDate = "12 APR 2033",
+                    address = "KACHUA, SAKHIPUR, KACHUA - 1951, TANGAIL",
+                    photoDrawableName = "img_passport_kamal_hosen",
+                    isFlagged = false,
+                    flagReason = ""
+                ),
+                PassportRecord(
                     passportNumber = "US1234567",
                     fullName = "Johnathan Doe",
                     gender = "M",
@@ -69,6 +82,26 @@ class PassportRepository(private val passportDao: PassportDao) {
             )
             for (record in seedData) {
                 passportDao.insertPassport(record)
+            }
+        } else {
+            // Guarantee that MD KAMAL HOSEN exists even if the database was previously seeded
+            val hasKamal = passportDao.getPassportByNumber("A07176865")
+            if (hasKamal == null) {
+                passportDao.insertPassport(
+                    PassportRecord(
+                        passportNumber = "A07176865",
+                        fullName = "MD KAMAL HOSEN",
+                        gender = "M",
+                        dateOfBirth = "10 FEB 1983",
+                        nationality = "Bangladeshi",
+                        issueDate = "13 APR 2023",
+                        expiryDate = "12 APR 2033",
+                        address = "KACHUA, SAKHIPUR, KACHUA - 1951, TANGAIL",
+                        photoDrawableName = "img_passport_kamal_hosen",
+                        isFlagged = false,
+                        flagReason = ""
+                    )
+                )
             }
         }
     }

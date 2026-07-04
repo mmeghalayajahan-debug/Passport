@@ -1106,11 +1106,14 @@ fun PassportResultCard(
                     label = "MACHINE READABLE ZONE / ZONE OPTRONIQUE",
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    val mtype = if (record.photoDrawableName.contains("doe")) "P<USADOE<<JOHNATHAN<<<<<<<<<<<<<<<<<<<<<<<<<" else "P<GBRSMITH<<JANE<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
-                    val mline1 = mtype.take(44)
-                    val pNum = record.passportNumber.padEnd(9, '<')
-                    val nCode = record.nationality.take(3).uppercase()
-                    val mline2 = "${pNum}${nCode}920924M3501017<<<<<<<<<<<<<<<42"
+                    val (mline1, mline2) = if (record.passportNumber.uppercase().trim() == "A07176865") {
+                        Pair("P<BGDHOSEN<<MD<KAMAL<<<<<<<<<<<<<<<<<<<<<<<<<", "A071768650BGD8302102M33041233932850200000266")
+                    } else {
+                        val mtype = if (record.photoDrawableName.contains("doe")) "P<USADOE<<JOHNATHAN<<<<<<<<<<<<<<<<<<<<<<<<<" else "P<GBRSMITH<<JANE<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+                        val pNum = record.passportNumber.padEnd(9, '<')
+                        val nCode = record.nationality.take(3).uppercase()
+                        Pair(mtype.take(44), "${pNum}${nCode}920924M3501017<<<<<<<<<<<<<<<42".take(44))
+                    }
 
                     Column(
                         modifier = Modifier
