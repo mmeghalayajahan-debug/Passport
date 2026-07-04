@@ -130,27 +130,45 @@
           </div>
           
           <!-- Embedded Scanner Interface -->
-          <div class="mt-4 bg-[#1C1B1F] rounded-2xl h-44 border border-dashed border-[#49454F] relative overflow-hidden flex flex-col items-center justify-center">
+          <div onclick="openScannerImageLightbox()" class="mt-4 bg-[#1C1B1F] rounded-2xl h-44 border border-dashed border-[#49454F] relative overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:border-[#D0BCFF] group transition-all">
             <!-- Aesthetic Holographic Laser Scan Line -->
             <div class="absolute left-0 w-full h-[2px] bg-[#D0BCFF]/60 scan-line z-20 shadow-[0_0_10px_#D0BCFF]"></div>
             
             <!-- Graphic background mesh -->
-            <div id="scannerBg" class="absolute inset-0 bg-cover bg-center opacity-25" style="background-image: url('https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=400')"></div>
+            <div id="scannerBg" class="absolute inset-0 bg-cover bg-center opacity-25 transition-all duration-300" style="background-image: url('https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=400')"></div>
             
+            <!-- BLOCKED stamp overlay -->
+            <div id="scannerBlockOverlay" class="absolute inset-0 bg-black/40 z-20 flex items-center justify-center hidden">
+              <div class="border-[3px] border-[#F44336] bg-[#2C0B0B]/90 rounded-xl px-4 py-2 flex flex-col items-center justify-center transform -rotate-12 shadow-2xl">
+                <div class="flex items-center gap-2 text-[#F44336]">
+                  <span class="material-symbols-outlined text-xl">block</span>
+                  <span class="font-mono font-black tracking-widest text-sm">BLOCKED</span>
+                </div>
+                <span class="text-[9px] font-bold text-[#F44336] mt-0.5 tracking-wider">পাসপোর্ট ব্লক করা হয়েছে</span>
+              </div>
+            </div>
+
             <!-- Icon/Status details -->
-            <div class="z-10 flex flex-col items-center text-center px-6 py-4 bg-black/65 backdrop-blur-md rounded-2xl border border-white/10 max-w-[85%]">
+            <div id="scannerEncryptedOverlay" class="z-10 flex flex-col items-center text-center px-6 py-4 bg-black/65 backdrop-blur-md rounded-2xl border border-white/10 max-w-[85%] transition-all group-hover:scale-95">
               <span class="material-symbols-outlined text-3xl text-[#D0BCFF] mb-1 animate-pulse">qr_code_scanner</span>
               <span class="text-xs font-mono font-bold tracking-wider text-white">SECURE SCANNER ENGAGED</span>
               <span id="scanFileName" class="text-[10px] font-mono text-[#CAC4D0] mt-0.5">SCAN_IMG_SECURE.JPG</span>
             </div>
 
             <!-- Absolute Labels -->
-            <div class="absolute bottom-3 right-3 bg-[#D0BCFF] text-[#381E72] text-[9px] px-2 py-0.5 rounded font-bold font-mono tracking-wider">
+            <div class="absolute bottom-3 right-3 bg-[#D0BCFF] text-[#381E72] text-[9px] px-2 py-0.5 rounded font-bold font-mono tracking-wider z-10">
               ENCRYPTED
             </div>
-            <div class="absolute top-3 left-3 flex items-center gap-1.5">
+            <div class="absolute top-3 left-3 flex items-center gap-1.5 z-10">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               <span class="text-[8px] font-mono text-[#CAC4D0]">FEED_ACTIVE</span>
+            </div>
+
+            <!-- Hover overlay guide -->
+            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity z-30 flex flex-col items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-white text-3xl animate-bounce">zoom_in</span>
+              <span class="text-xs font-mono font-bold text-white tracking-widest">CLICK TO EXPAND SCAN</span>
+              <span class="text-[9px] font-mono text-emerald-400 tracking-wider">VIEW FULL RESOLUTION</span>
             </div>
           </div>
         </div>
@@ -302,6 +320,36 @@
       <button type="button" onclick="toggleFlagModal(false)" class="mt-4 w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-white font-bold text-xs font-mono">
         CANCEL ACTION
       </button>
+    </div>
+  </div>
+
+  <!-- Passport Scan Image Lightbox Modal -->
+  <div id="imageLightboxModal" onclick="toggleImageLightbox(false)" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex flex-col items-center justify-center hidden p-4 cursor-zoom-out">
+    <div class="relative max-w-4xl w-full max-h-[85vh] flex flex-col items-center" onclick="event.stopPropagation()">
+      <!-- Close button -->
+      <button onclick="toggleImageLightbox(false)" class="absolute -top-12 right-0 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-all cursor-pointer">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      
+      <!-- Image Container to hold the overlay -->
+      <div class="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl flex items-center justify-center">
+        <!-- Expanded Image -->
+        <img id="lightboxImg" class="max-h-[75vh] object-contain transition-transform duration-300" src="" alt="Passport Scan Full View">
+        
+        <!-- Lightbox BLOCKED stamp overlay -->
+        <div id="lightboxBlockOverlay" class="absolute inset-0 bg-black/40 flex items-center justify-center hidden">
+          <div class="border-[4px] border-[#F44336] bg-[#2C0B0B]/95 rounded-2xl px-8 py-4 flex flex-col items-center justify-center transform -rotate-12 shadow-2xl">
+            <div class="flex items-center gap-3 text-[#F44336]">
+              <span class="material-symbols-outlined text-3xl font-bold">block</span>
+              <span class="font-mono font-black tracking-widest text-2xl">BLOCKED</span>
+            </div>
+            <span class="text-xs font-bold text-[#F44336] mt-1.5 tracking-widest">পাসপোর্ট ব্লক করা হয়েছে</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Label caption -->
+      <p id="lightboxCaption" class="text-xs font-mono font-bold text-[#D0BCFF] mt-4 tracking-widest text-center uppercase bg-black/50 px-4 py-2 rounded-xl border border-white/5"></p>
     </div>
   </div>
 
@@ -483,8 +531,11 @@
       document.getElementById("mrzLine1").innerText = mline1;
       document.getElementById("mrzLine2").innerText = mline2;
 
-      // Update Scanner Background Image
+      // Update Scanner Background Image & Grayscale Filter & Block Overlay
       const scannerBg = document.getElementById("scannerBg");
+      const blockOverlay = document.getElementById("scannerBlockOverlay");
+      const encryptedOverlay = document.getElementById("scannerEncryptedOverlay");
+      
       if (scannerBg) {
         if (p.photoDrawableName === "img_passport_kamal_hosen") {
           scannerBg.style.backgroundImage = "url('./img_passport_kamal_hosen.jpg')";
@@ -495,6 +546,16 @@
         } else {
           scannerBg.style.backgroundImage = "url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400')";
           scannerBg.style.opacity = "0.85";
+        }
+        
+        if (p.isFlagged) {
+          scannerBg.style.filter = "grayscale(100%)";
+          if (blockOverlay) blockOverlay.classList.remove("hidden");
+          if (encryptedOverlay) encryptedOverlay.classList.add("hidden");
+        } else {
+          scannerBg.style.filter = "none";
+          if (blockOverlay) blockOverlay.classList.add("hidden");
+          if (encryptedOverlay) encryptedOverlay.classList.remove("hidden");
         }
       }
 
@@ -569,6 +630,44 @@
       const modal = document.getElementById("flagModal");
       if (show) modal.classList.remove("hidden");
       else modal.classList.add("hidden");
+    }
+
+    function toggleImageLightbox(show, imgSrc = "", title = "", isFlagged = false) {
+      const modal = document.getElementById("imageLightboxModal");
+      if (show) {
+        const img = document.getElementById("lightboxImg");
+        img.src = imgSrc;
+        
+        const lbBlockOverlay = document.getElementById("lightboxBlockOverlay");
+        if (isFlagged) {
+          img.style.filter = "grayscale(100%)";
+          if (lbBlockOverlay) lbBlockOverlay.classList.remove("hidden");
+        } else {
+          img.style.filter = "none";
+          if (lbBlockOverlay) lbBlockOverlay.classList.add("hidden");
+        }
+        
+        document.getElementById("lightboxCaption").innerText = title;
+        modal.classList.remove("hidden");
+      } else {
+        modal.classList.add("hidden");
+      }
+    }
+
+    function openScannerImageLightbox() {
+      const p = passports.find(item => item.passportNumber === selectedPassportNo);
+      if (!p) return;
+      
+      let imgSrc = "";
+      if (p.photoDrawableName === "img_passport_kamal_hosen") {
+        imgSrc = "./img_passport_kamal_hosen.jpg";
+      } else if (p.photoDrawableName.includes("doe")) {
+        imgSrc = "https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=800";
+      } else {
+        imgSrc = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=800";
+      }
+      
+      toggleImageLightbox(true, imgSrc, p.fullName + " - " + p.passportNumber, p.isFlagged);
     }
 
     // Add new Passport

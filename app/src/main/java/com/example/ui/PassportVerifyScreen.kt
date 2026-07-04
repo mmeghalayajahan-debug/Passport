@@ -25,6 +25,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -90,10 +93,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -632,7 +638,8 @@ fun QuickSelectPassportRow(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .size(36.dp)
-                            .clip(CircleShape)
+                            .clip(CircleShape),
+                        colorFilter = if (passport.isFlagged) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null
                     )
                 } else {
                     Box(
@@ -763,6 +770,7 @@ fun PassportResultCard(
 ) {
     var showBlockDialog by remember { mutableStateOf(false) }
     var flagReasonText by remember { mutableStateOf("") }
+    var showPhotoLightbox by remember { mutableStateOf(false) }
 
     val securityGlowColor by animateColorAsState(
         targetValue = if (record.isFlagged) WarningRed else TechSecondary,
@@ -770,6 +778,9 @@ fun PassportResultCard(
     )
 
     val context = LocalContext.current
+    val photoResId = remember(record.photoDrawableName) {
+        getResIdByName(context, record.photoDrawableName)
+    }
 
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
@@ -1024,17 +1035,14 @@ fun PassportResultCard(
                     Spacer(modifier = Modifier.height(14.dp))
 
                     // Encrypted Photo Scanner Box
-                    val photoResId = remember(record.photoDrawableName) {
-                        getResIdByName(context, record.photoDrawableName)
-                    }
-
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(140.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(TechBackground)
-                            .border(1.dp, TechSurfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
+                            .border(1.dp, TechSurfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                            .clickable { showPhotoLightbox = true },
                         contentAlignment = Alignment.Center
                     ) {
                         if (photoResId != 0) {
@@ -1044,7 +1052,8 @@ fun PassportResultCard(
                                 contentDescription = "Scan Image of ${record.fullName}",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,
-                                alpha = imageAlpha
+                                alpha = imageAlpha,
+                                colorFilter = if (record.isFlagged) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null
                             )
                         }
 
@@ -1056,38 +1065,86 @@ fun PassportResultCard(
                                 .background(TextSecondary.copy(alpha = 0.5f))
                         )
 
-                        // Scanner Details Foreground overlay
-                        Box(
-                            modifier = Modifier
-                                .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(12.dp))
-                                .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                        if (!record.isFlagged) {
+                            // Scanner Details Foreground overlay
+                            Box(
+                                modifier = Modifier
+                                    .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.QrCodeScanner,
-                                    contentDescription = null,
-                                    tint = TextSecondary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = if (record.photoDrawableName.isNotEmpty()) "${record.photoDrawableName.uppercase()}.JPG" else "SCAN_IMG_SECURE.JPG",
-                                    color = TextPrimary.copy(alpha = 0.9f),
-                                    fontSize = 10.sp,
-                                    fontFamily = FontFamily.Monospace,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "ENCRYPTED DIGITIZED PORTRAIT",
-                                    color = TextSecondary.copy(alpha = 0.8f),
-                                    fontSize = 8.sp,
-                                    fontFamily = FontFamily.Monospace
-                                )
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.QrCodeScanner,
+                                        contentDescription = null,
+                                        tint = TextSecondary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = if (record.photoDrawableName.isNotEmpty()) "${record.photoDrawableName.uppercase()}.JPG" else "SCAN_IMG_SECURE.JPG",
+                                        color = TextPrimary.copy(alpha = 0.9f),
+                                        fontSize = 10.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "ENCRYPTED DIGITIZED PORTRAIT",
+                                        color = TextSecondary.copy(alpha = 0.8f),
+                                        fontSize = 8.sp,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.4f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier
+                                        .rotate(-15f)
+                                        .border(2.dp, Color(0xFFF44336), RoundedCornerShape(8.dp))
+                                        .background(Color(0xDD2C0B0B))
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Block,
+                                            contentDescription = null,
+                                            tint = Color(0xFFF44336),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "BLOCKED",
+                                            color = Color(0xFFF44336),
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Black,
+                                            fontFamily = FontFamily.Monospace,
+                                            letterSpacing = 1.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(1.dp))
+                                    Text(
+                                        text = "পাসপোর্ট ব্লক করা হয়েছে",
+                                        color = Color(0xFFF44336),
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Default
+                                    )
+                                }
                             }
                         }
 
@@ -1282,6 +1339,123 @@ fun PassportResultCard(
                             Text("Confirm Block")
                         }
                     }
+                }
+            }
+        }
+    }
+
+    if (showPhotoLightbox && photoResId != 0) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { showPhotoLightbox = false }) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1C1B1F).copy(alpha = 0.95f)),
+                shape = RoundedCornerShape(24.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${record.fullName} - ${record.passportNumber}",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            fontFamily = FontFamily.Monospace,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = { showPhotoLightbox = false },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close Lightbox",
+                                tint = Color.White
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 480.dp)
+                            .clip(RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = photoResId),
+                            contentDescription = "Expanded Scan",
+                            modifier = Modifier.fillMaxWidth(),
+                            contentScale = ContentScale.Fit,
+                            colorFilter = if (record.isFlagged) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null
+                        )
+                        if (record.isFlagged) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.4f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier
+                                        .rotate(-15f)
+                                        .border(3.dp, Color(0xFFF44336), RoundedCornerShape(8.dp))
+                                        .background(Color(0xDD2C0B0B))
+                                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Block,
+                                            contentDescription = null,
+                                            tint = Color(0xFFF44336),
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "BLOCKED",
+                                            color = Color(0xFFF44336),
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Black,
+                                            fontFamily = FontFamily.Monospace,
+                                            letterSpacing = 2.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "পাসপোর্ট ব্লক করা হয়েছে",
+                                        color = Color(0xFFF44336),
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Default
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = if (record.isFlagged) "SYSTEM SECURITY BLOCK ACTIVE" else "SECURE PHOTO IDENTITY VERIFICATION PASSED",
+                        color = if (record.isFlagged) WarningRed else TechSecondary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace
+                    )
                 }
             }
         }
