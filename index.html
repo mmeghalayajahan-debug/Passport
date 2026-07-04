@@ -135,10 +135,10 @@
             <div class="absolute left-0 w-full h-[2px] bg-[#D0BCFF]/60 scan-line z-20 shadow-[0_0_10px_#D0BCFF]"></div>
             
             <!-- Graphic background mesh -->
-            <div id="scannerBg" class="absolute inset-0 bg-cover bg-center opacity-20 grayscale" style="background-image: url('https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=400')"></div>
+            <div id="scannerBg" class="absolute inset-0 bg-cover bg-center opacity-25" style="background-image: url('https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=400')"></div>
             
             <!-- Icon/Status details -->
-            <div class="z-10 flex flex-col items-center text-center px-4">
+            <div class="z-10 flex flex-col items-center text-center px-6 py-4 bg-black/65 backdrop-blur-md rounded-2xl border border-white/10 max-w-[85%]">
               <span class="material-symbols-outlined text-3xl text-[#D0BCFF] mb-1 animate-pulse">qr_code_scanner</span>
               <span class="text-xs font-mono font-bold tracking-wider text-white">SECURE SCANNER ENGAGED</span>
               <span id="scanFileName" class="text-[10px] font-mono text-[#CAC4D0] mt-0.5">SCAN_IMG_SECURE.JPG</span>
@@ -488,13 +488,13 @@
       if (scannerBg) {
         if (p.photoDrawableName === "img_passport_kamal_hosen") {
           scannerBg.style.backgroundImage = "url('./img_passport_kamal_hosen.jpg')";
-          scannerBg.style.opacity = "0.45";
+          scannerBg.style.opacity = "0.95";
         } else if (p.photoDrawableName.includes("doe")) {
           scannerBg.style.backgroundImage = "url('https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=400')";
-          scannerBg.style.opacity = "0.2";
+          scannerBg.style.opacity = "0.85";
         } else {
           scannerBg.style.backgroundImage = "url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400')";
-          scannerBg.style.opacity = "0.2";
+          scannerBg.style.opacity = "0.85";
         }
       }
 

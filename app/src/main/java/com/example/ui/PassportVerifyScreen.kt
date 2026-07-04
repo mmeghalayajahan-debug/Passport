@@ -1038,12 +1038,13 @@ fun PassportResultCard(
                         contentAlignment = Alignment.Center
                     ) {
                         if (photoResId != 0) {
+                            val imageAlpha = if (record.photoDrawableName == "img_passport_kamal_hosen") 0.95f else 0.85f
                             Image(
                                 painter = painterResource(id = photoResId),
                                 contentDescription = "Scan Image of ${record.fullName}",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,
-                                alpha = 0.2f
+                                alpha = imageAlpha
                             )
                         }
 
@@ -1056,30 +1057,38 @@ fun PassportResultCard(
                         )
 
                         // Scanner Details Foreground overlay
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                        Box(
+                            modifier = Modifier
+                                .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(12.dp))
+                                .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.QrCodeScanner,
-                                contentDescription = null,
-                                tint = TextSecondary,
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = if (record.photoDrawableName.isNotEmpty()) "${record.photoDrawableName.uppercase()}.JPG" else "SCAN_IMG_SECURE.JPG",
-                                color = TextPrimary.copy(alpha = 0.7f),
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "ENCRYPTED DIGITIZED SHIELD PORTRAIT",
-                                color = TextSecondary.copy(alpha = 0.6f),
-                                fontSize = 9.sp,
-                                fontFamily = FontFamily.Monospace
-                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.QrCodeScanner,
+                                    contentDescription = null,
+                                    tint = TextSecondary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = if (record.photoDrawableName.isNotEmpty()) "${record.photoDrawableName.uppercase()}.JPG" else "SCAN_IMG_SECURE.JPG",
+                                    color = TextPrimary.copy(alpha = 0.9f),
+                                    fontSize = 10.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "ENCRYPTED DIGITIZED PORTRAIT",
+                                    color = TextSecondary.copy(alpha = 0.8f),
+                                    fontSize = 8.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
                         }
 
                         // Encrypted pill tag
