@@ -280,6 +280,10 @@
           <label class="block text-xs font-bold text-[#D0BCFF] font-mono uppercase tracking-wider mb-1.5">Passport Photo Profile (Optional) / Photo Passeport</label>
           <input type="file" id="regPhoto" accept="image/*"
                  class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#49454F]/40 file:text-white hover:file:bg-[#49454F]/60">
+          <div id="regPhotoPreviewContainer" class="hidden mt-3 border border-dashed border-[#49454F] rounded-2xl p-3 flex flex-col items-center justify-center bg-black/25">
+            <span class="text-[10px] font-mono text-[#D0BCFF] mb-2 uppercase tracking-wider">Selected Photo Preview / Prévisualisation</span>
+            <img id="regPhotoPreview" class="max-h-36 rounded-xl object-contain border border-white/10" src="" alt="Selected Photo Preview">
+          </div>
         </div>
 
         <!-- Modal Footer -->
@@ -420,6 +424,7 @@
 
     let passports = [];
     let selectedPassportNo = "";
+    let currentRegPhotoBase64 = "";
 
     // Load list of passports from localStorage or initialize defaults
     function initDatabase() {
@@ -649,8 +654,17 @@
     // Toggle Modal dialogs
     function toggleRegisterModal(show) {
       const modal = document.getElementById("registerModal");
-      if (show) modal.classList.remove("hidden");
-      else modal.classList.add("hidden");
+      if (show) {
+        modal.classList.remove("hidden");
+      } else {
+        modal.classList.add("hidden");
+        document.getElementById("registerForm").reset();
+        currentRegPhotoBase64 = "";
+        const previewImg = document.getElementById("regPhotoPreview");
+        if (previewImg) previewImg.src = "";
+        const previewContainer = document.getElementById("regPhotoPreviewContainer");
+        if (previewContainer) previewContainer.classList.add("hidden");
+      }
     }
 
     function toggleFlagModal(show) {
@@ -725,86 +739,98 @@
         issueDate: issue,
         expiryDate: expiry,
         address: address,
-        photoDrawableName: photoName,
+        photoDrawableName: currentRegPhotoBase64 || photoName,
         isFlagged: false,
         flagReason: ""
       };
 
-      function saveAndRefresh(record) {
-        // Read complete DB from localStorage to avoid search-filtered updates
-        const stored = localStorage.getItem("secure_verify_passports");
-        const fullList = stored ? JSON.parse(stored) : [...defaultPassports];
-        
-        fullList.unshift(record);
-        passports = fullList;
-        selectedPassportNo = num;
-        
-        saveToLocalStorage();
-        toggleRegisterModal(false);
-        document.getElementById("registerForm").reset();
-        
-        // Update view
-        document.getElementById("searchInput").value = "";
-        renderPassportList();
-        renderActivePassport();
+      // Read complete DB from localStorage to avoid search-filtered updates
+      const stored = localStorage.getItem("secure_verify_passports");
+      const fullList = stored ? JSON.parse(stored) : [...defaultPassports];
+      
+      fullList.unshift(newRecord);
+      passports = fullList;
+      selectedPassportNo = num;
+      
+      saveToLocalStorage();
+      toggleRegisterModal(false);
+      
+      // Update view
+      document.getElementById("searchInput").value = "";
+      renderPassportList();
+      renderActivePassport();
 
-        // Scroll to details so the user can see the scanner engaged
-        setTimeout(() => {
-          const detailsEl = document.getElementById("detailsGrid");
-          if (detailsEl) {
-            detailsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 150);
-      }
-
-      const fileInput = document.getElementById("regPhoto");
-      if (fileInput && fileInput.files && fileInput.files[0]) {
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          const img = new Image();
-          img.onload = function() {
-            // Downscale to max dimension of 300px
-            const maxDim = 300;
-            let width = img.width;
-            let height = img.height;
-            if (width > maxDim || height > maxDim) {
-              if (width > height) {
-                height = Math.round((height * maxDim) / width);
-                width = maxDim;
-              } else {
-                width = Math.round((width * maxDim) / height);
-                height = maxDim;
-              }
-            }
-            
-            // Draw to a canvas
-            const canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            // Export as compressed jpeg
-            const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
-            newRecord.photoDrawableName = compressedBase64;
-            saveAndRefresh(newRecord);
-          };
-          img.onerror = function() {
-            // Fallback if image load fails
-            newRecord.photoDrawableName = event.target.result;
-            saveAndRefresh(newRecord);
-          };
-          img.src = event.target.result;
-        };
-        reader.onerror = function() {
-          saveAndRefresh(newRecord);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        saveAndRefresh(newRecord);
-      }
+      // Scroll to details so the user can see the scanner engaged
+      setTimeout(() => {
+        const detailsEl = document.getElementById("detailsGrid");
+        if (detailsEl) {
+          detailsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 150);
     }
+
+    // Handle image file selection, compression, and preview
+    document.addEventListener("DOMContentLoaded", () => {
+      const regPhotoInput = document.getElementById("regPhoto");
+      if (regPhotoInput) {
+        regPhotoInput.addEventListener("change", function(e) {
+          const file = e.target.files[0];
+          const previewContainer = document.getElementById("regPhotoPreviewContainer");
+          const previewImg = document.getElementById("regPhotoPreview");
+          
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+              const img = new Image();
+              img.onload = function() {
+                try {
+                  // Downscale to max dimension of 240px for efficient storage and clean display
+                  const maxDim = 240;
+                  let width = img.width;
+                  let height = img.height;
+                  if (width > maxDim || height > maxDim) {
+                    if (width > height) {
+                      height = Math.round((height * maxDim) / width);
+                      width = maxDim;
+                    } else {
+                      width = Math.round((width * maxDim) / height);
+                      height = maxDim;
+                    }
+                  }
+                  
+                  const canvas = document.createElement("canvas");
+                  canvas.width = width;
+                  canvas.height = height;
+                  const ctx = canvas.getContext("2d");
+                  ctx.drawImage(img, 0, 0, width, height);
+                  
+                  const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+                  currentRegPhotoBase64 = compressedBase64;
+                  if (previewImg) previewImg.src = compressedBase64;
+                  if (previewContainer) previewContainer.classList.remove("hidden");
+                } catch (err) {
+                  console.error("Failed to compress image preview, using original:", err);
+                  currentRegPhotoBase64 = event.target.result;
+                  if (previewImg) previewImg.src = event.target.result;
+                  if (previewContainer) previewContainer.classList.remove("hidden");
+                }
+              };
+              img.onerror = function() {
+                currentRegPhotoBase64 = event.target.result;
+                if (previewImg) previewImg.src = event.target.result;
+                if (previewContainer) previewContainer.classList.remove("hidden");
+              };
+              img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+          } else {
+            currentRegPhotoBase64 = "";
+            if (previewImg) previewImg.src = "";
+            if (previewContainer) previewContainer.classList.add("hidden");
+          }
+        });
+      }
+    });
 
     // Flag and block entry
     function applyFlagReason(reason) {
