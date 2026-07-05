@@ -276,6 +276,12 @@
                     class="w-full bg-[#1C1B1F] border border-[#49454F] rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#D0BCFF] resize-none"></textarea>
         </div>
 
+        <div>
+          <label class="block text-xs font-bold text-[#D0BCFF] font-mono uppercase tracking-wider mb-1.5">Passport Photo Profile (Optional) / Photo Passeport</label>
+          <input type="file" id="regPhoto" accept="image/*"
+                 class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#49454F]/40 file:text-white hover:file:bg-[#49454F]/60">
+        </div>
+
         <!-- Modal Footer -->
         <div class="pt-4 border-t border-[#49454F]/60 flex gap-3">
           <button type="button" onclick="toggleRegisterModal(false)" class="flex-1 h-11 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-white font-bold text-sm">
@@ -702,22 +708,36 @@
         flagReason: ""
       };
 
-      // Read complete DB from localStorage to avoid search-filtered updates
-      const stored = localStorage.getItem("secure_verify_passports");
-      const fullList = stored ? JSON.parse(stored) : [...defaultPassports];
-      
-      fullList.unshift(newRecord);
-      passports = fullList;
-      selectedPassportNo = num;
-      
-      saveToLocalStorage();
-      toggleRegisterModal(false);
-      document.getElementById("registerForm").reset();
-      
-      // Update view
-      document.getElementById("searchInput").value = "";
-      renderPassportList();
-      renderActivePassport();
+      function saveAndRefresh(record) {
+        // Read complete DB from localStorage to avoid search-filtered updates
+        const stored = localStorage.getItem("secure_verify_passports");
+        const fullList = stored ? JSON.parse(stored) : [...defaultPassports];
+        
+        fullList.unshift(record);
+        passports = fullList;
+        selectedPassportNo = num;
+        
+        saveToLocalStorage();
+        toggleRegisterModal(false);
+        document.getElementById("registerForm").reset();
+        
+        // Update view
+        document.getElementById("searchInput").value = "";
+        renderPassportList();
+        renderActivePassport();
+      }
+
+      const fileInput = document.getElementById("regPhoto");
+      if (fileInput && fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          newRecord.photoDrawableName = event.target.result;
+          saveAndRefresh(newRecord);
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        saveAndRefresh(newRecord);
+      }
     }
 
     // Flag and block entry

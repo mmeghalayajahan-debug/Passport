@@ -114,6 +114,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
+import java.io.File
 import com.example.R
 import com.example.data.PassportRecord
 import com.example.ui.theme.SuccessGreen
@@ -636,9 +640,20 @@ fun QuickSelectPassportRow(
                     }
                     getResIdByName(context, nameToUse)
                 }
+                val isCustomImage = passport.photoDrawableName.isNotEmpty() && resourceId == 0
                 if (resourceId != 0) {
                     Image(
                         painter = painterResource(id = resourceId),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape),
+                        colorFilter = if (passport.isFlagged) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null
+                    )
+                } else if (isCustomImage) {
+                    coil.compose.AsyncImage(
+                        model = passport.photoDrawableName,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
@@ -1055,6 +1070,7 @@ fun PassportResultCard(
                             .clickable { showPhotoLightbox = true },
                         contentAlignment = Alignment.Center
                     ) {
+                        val isCustomImage = record.photoDrawableName.isNotEmpty() && photoResId == 0
                         if (photoResId != 0) {
                             val imageAlpha = if (record.photoDrawableName == "img_passport_kamal_hosen") 0.95f else 0.85f
                             Image(
@@ -1063,6 +1079,15 @@ fun PassportResultCard(
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,
                                 alpha = imageAlpha,
+                                colorFilter = if (record.isFlagged) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null
+                            )
+                        } else if (isCustomImage) {
+                            coil.compose.AsyncImage(
+                                model = record.photoDrawableName,
+                                contentDescription = "Scan Image of ${record.fullName}",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                                alpha = 0.95f,
                                 colorFilter = if (record.isFlagged) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null
                             )
                         }
@@ -1354,7 +1379,8 @@ fun PassportResultCard(
         }
     }
 
-    if (showPhotoLightbox && photoResId != 0) {
+    val isCustomImage = record.photoDrawableName.isNotEmpty() && photoResId == 0
+    if (showPhotoLightbox && (photoResId != 0 || isCustomImage)) {
         androidx.compose.ui.window.Dialog(onDismissRequest = { showPhotoLightbox = false }) {
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF1C1B1F).copy(alpha = 0.95f)),
@@ -1403,13 +1429,23 @@ fun PassportResultCard(
                             .clip(RoundedCornerShape(16.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Image(
-                            painter = painterResource(id = photoResId),
-                            contentDescription = "Expanded Scan",
-                            modifier = Modifier.fillMaxWidth(),
-                            contentScale = ContentScale.Fit,
-                            colorFilter = if (record.isFlagged) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null
-                        )
+                        if (photoResId != 0) {
+                            Image(
+                                painter = painterResource(id = photoResId),
+                                contentDescription = "Expanded Scan",
+                                modifier = Modifier.fillMaxWidth(),
+                                contentScale = ContentScale.Fit,
+                                colorFilter = if (record.isFlagged) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null
+                            )
+                        } else {
+                            coil.compose.AsyncImage(
+                                model = record.photoDrawableName,
+                                contentDescription = "Expanded Scan",
+                                modifier = Modifier.fillMaxWidth(),
+                                contentScale = ContentScale.Fit,
+                                colorFilter = if (record.isFlagged) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null
+                            )
+                        }
                         if (record.isFlagged) {
                             Box(
                                 modifier = Modifier
@@ -1516,6 +1552,27 @@ fun RegisterPassportPanel(
     val regPhoto by viewModel.regPhotoName.collectAsState()
     val regIsFlagged by viewModel.regIsFlagged.collectAsState()
     val regFlagReason by viewModel.regFlagReason.collectAsState()
+
+    val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            if (uri != null) {
+                try {
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                    if (inputStream != null) {
+                        val fileName = "custom_photo_${System.currentTimeMillis()}.jpg"
+                        val file = java.io.File(context.filesDir, fileName)
+                        file.outputStream().use { outputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                        viewModel.regPhotoName.value = file.absolutePath
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    )
 
     LazyColumn(
         modifier = Modifier
@@ -1713,7 +1770,7 @@ fun RegisterPassportPanel(
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     val presets = listOf(
                         "img_passport_john_doe" to "Preset Male 1",
@@ -1756,9 +1813,67 @@ fun RegisterPassportPanel(
                                 text = label,
                                 color = if (isSelected) TechSecondary else TextSecondary,
                                 fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
+                    }
+
+                    // Custom Photo selection Card
+                    val isCustomSelected = regPhoto.isNotEmpty() && !regPhoto.startsWith("img_passport_")
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .weight(1f)
+                            .border(
+                                2.dp,
+                                if (isCustomSelected) TechSecondary else Color.Transparent,
+                                RoundedCornerShape(8.dp)
+                            )
+                            .background(
+                                if (isCustomSelected) TechSecondary.copy(alpha = 0.1f) else Color.Transparent,
+                                RoundedCornerShape(8.dp)
+                            )
+                            .clickable {
+                                singlePhotoPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            }
+                            .padding(6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(60.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(TechSurfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isCustomSelected) {
+                                coil.compose.AsyncImage(
+                                    model = regPhoto,
+                                    contentDescription = "Custom Photo",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.AddCard,
+                                    contentDescription = "Choose photo",
+                                    tint = TechSecondary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (isCustomSelected) "Custom" else "Choose Custom",
+                            color = if (isCustomSelected) TechSecondary else TextSecondary,
+                            fontSize = 11.sp,
+                            fontWeight = if (isCustomSelected) FontWeight.Bold else FontWeight.Normal,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
             }
