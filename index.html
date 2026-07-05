@@ -457,7 +457,12 @@
     }
 
     function saveToLocalStorage() {
-      localStorage.setItem("secure_verify_passports", JSON.stringify(passports));
+      try {
+        localStorage.setItem("secure_verify_passports", JSON.stringify(passports));
+      } catch (e) {
+        console.error("Failed to save to localStorage:", e);
+        alert("Warning: Could not save data locally (Storage Quota Exceeded or Private Browsing). Please choose a smaller image file.");
+      }
     }
 
     // Render left sidebar
@@ -519,7 +524,8 @@
       document.getElementById("expiryVal").innerText = p.expiryDate;
       document.getElementById("genderDobVal").innerText = `${p.gender} • ${p.dateOfBirth}`;
       document.getElementById("addressVal").innerText = p.address;
-      document.getElementById("scanFileName").innerText = p.photoDrawableName.toUpperCase() + ".JPG";
+      const isCustomPhoto = p.photoDrawableName.startsWith("data:");
+      document.getElementById("scanFileName").innerText = isCustomPhoto ? "CUSTOM_PHOTO.JPG" : (p.photoDrawableName.toUpperCase() + ".JPG");
 
       // MRZ Lines Generator
       let mline1 = "";
@@ -545,8 +551,12 @@
       
       if (scannerBg) {
         const isKamal = p.photoDrawableName === "img_passport_kamal_hosen" || p.passportNumber === "A07176865" || p.fullName.includes("KAMAL") || p.fullName.includes("HOSEN");
+        const isCustomPhoto = p.photoDrawableName.startsWith("data:");
         if (isKamal) {
           scannerBg.style.backgroundImage = "url('" + kamalHosenImage + "')";
+          scannerBg.style.opacity = "0.95";
+        } else if (isCustomPhoto) {
+          scannerBg.style.backgroundImage = "url('" + p.photoDrawableName + "')";
           scannerBg.style.opacity = "0.95";
         } else if (p.photoDrawableName.includes("doe")) {
           scannerBg.style.backgroundImage = "url('https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=400')";
@@ -668,8 +678,11 @@
       
       let imgSrc = "";
       const isKamal = p.photoDrawableName === "img_passport_kamal_hosen" || p.passportNumber === "A07176865" || p.fullName.includes("KAMAL") || p.fullName.includes("HOSEN");
+      const isCustomPhoto = p.photoDrawableName.startsWith("data:");
       if (isKamal) {
         imgSrc = kamalHosenImage;
+      } else if (isCustomPhoto) {
+        imgSrc = p.photoDrawableName;
       } else if (p.photoDrawableName.includes("doe")) {
         imgSrc = "https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=800";
       } else {
@@ -729,12 +742,48 @@
 
       const fileInput = document.getElementById("regPhoto");
       if (fileInput && fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
         const reader = new FileReader();
         reader.onload = function(event) {
-          newRecord.photoDrawableName = event.target.result;
+          const img = new Image();
+          img.onload = function() {
+            // Downscale to max dimension of 300px
+            const maxDim = 300;
+            let width = img.width;
+            let height = img.height;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            
+            // Draw to a canvas
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Export as compressed jpeg
+            const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+            newRecord.photoDrawableName = compressedBase64;
+            saveAndRefresh(newRecord);
+          };
+          img.onerror = function() {
+            // Fallback if image load fails
+            newRecord.photoDrawableName = event.target.result;
+            saveAndRefresh(newRecord);
+          };
+          img.src = event.target.result;
+        };
+        reader.onerror = function() {
           saveAndRefresh(newRecord);
         };
-        reader.readAsDataURL(fileInput.files[0]);
+        reader.readAsDataURL(file);
       } else {
         saveAndRefresh(newRecord);
       }
