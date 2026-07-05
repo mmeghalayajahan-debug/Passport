@@ -538,7 +538,8 @@
       const encryptedOverlay = document.getElementById("scannerEncryptedOverlay");
       
       if (scannerBg) {
-        if (p.photoDrawableName === "img_passport_kamal_hosen") {
+        const isKamal = p.photoDrawableName === "img_passport_kamal_hosen" || p.passportNumber === "A07176865" || p.fullName.includes("KAMAL") || p.fullName.includes("HOSEN");
+        if (isKamal) {
           scannerBg.style.backgroundImage = "url('" + kamalHosenImage + "')";
           scannerBg.style.opacity = "0.95";
         } else if (p.photoDrawableName.includes("doe")) {
@@ -660,7 +661,8 @@
       if (!p) return;
       
       let imgSrc = "";
-      if (p.photoDrawableName === "img_passport_kamal_hosen") {
+      const isKamal = p.photoDrawableName === "img_passport_kamal_hosen" || p.passportNumber === "A07176865" || p.fullName.includes("KAMAL") || p.fullName.includes("HOSEN");
+      if (isKamal) {
         imgSrc = kamalHosenImage;
       } else if (p.photoDrawableName.includes("doe")) {
         imgSrc = "https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=800";
@@ -683,6 +685,9 @@
       const expiry = document.getElementById("regExpiryDate").value.toUpperCase();
       const address = document.getElementById("regAddress").value;
 
+      const isKamal = name.includes("KAMAL") || name.includes("HOSEN") || num === "A07176865";
+      const photoName = isKamal ? "img_passport_kamal_hosen" : "smith_photo";
+
       const newRecord = {
         passportNumber: num,
         fullName: name,
@@ -692,7 +697,7 @@
         issueDate: issue,
         expiryDate: expiry,
         address: address,
-        photoDrawableName: "smith_photo",
+        photoDrawableName: photoName,
         isFlagged: false,
         flagReason: ""
       };

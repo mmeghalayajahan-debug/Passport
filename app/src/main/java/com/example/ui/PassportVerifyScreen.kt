@@ -628,8 +628,13 @@ fun QuickSelectPassportRow(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Mini photo circle or default shield
                 val context = LocalContext.current
-                val resourceId = remember(passport.photoDrawableName) {
-                    getResIdByName(context, passport.photoDrawableName)
+                val resourceId = remember(passport.photoDrawableName, passport.fullName, passport.passportNumber) {
+                    val nameToUse = if (passport.fullName.uppercase().contains("KAMAL") || passport.fullName.uppercase().contains("HOSEN") || passport.passportNumber == "A07176865") {
+                        "img_passport_kamal_hosen"
+                    } else {
+                        passport.photoDrawableName
+                    }
+                    getResIdByName(context, nameToUse)
                 }
                 if (resourceId != 0) {
                     Image(
@@ -778,8 +783,13 @@ fun PassportResultCard(
     )
 
     val context = LocalContext.current
-    val photoResId = remember(record.photoDrawableName) {
-        getResIdByName(context, record.photoDrawableName)
+    val photoResId = remember(record.photoDrawableName, record.fullName, record.passportNumber) {
+        val nameToUse = if (record.fullName.uppercase().contains("KAMAL") || record.fullName.uppercase().contains("HOSEN") || record.passportNumber == "A07176865") {
+            "img_passport_kamal_hosen"
+        } else {
+            record.photoDrawableName
+        }
+        getResIdByName(context, nameToUse)
     }
 
     Card(

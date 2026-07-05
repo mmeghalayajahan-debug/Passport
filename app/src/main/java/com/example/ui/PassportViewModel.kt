@@ -118,6 +118,12 @@ class PassportViewModel(
                 return@launch
             }
 
+            val actualPhotoName = if (name.uppercase().contains("KAMAL") || name.uppercase().contains("HOSEN") || number == "A07176865") {
+                "img_passport_kamal_hosen"
+            } else {
+                regPhotoName.value
+            }
+
             val newRecord = PassportRecord(
                 passportNumber = number,
                 fullName = name,
@@ -127,7 +133,7 @@ class PassportViewModel(
                 issueDate = regIssueDate.value,
                 expiryDate = regExpiryDate.value,
                 address = address,
-                photoDrawableName = regPhotoName.value,
+                photoDrawableName = actualPhotoName,
                 isFlagged = regIsFlagged.value,
                 flagReason = if (regIsFlagged.value) regFlagReason.value.ifEmpty { "Administrative block" } else ""
             )
