@@ -481,6 +481,15 @@
           selectedPassportNo = p.passportNumber;
           renderPassportList();
           renderActivePassport();
+          // Scroll to details on mobile screens
+          if (window.innerWidth < 768) {
+            setTimeout(() => {
+              const detailsEl = document.getElementById("detailsGrid");
+              if (detailsEl) {
+                detailsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }, 100);
+          }
         };
 
         card.innerHTML = `
@@ -738,6 +747,14 @@
         document.getElementById("searchInput").value = "";
         renderPassportList();
         renderActivePassport();
+
+        // Scroll to details so the user can see the scanner engaged
+        setTimeout(() => {
+          const detailsEl = document.getElementById("detailsGrid");
+          if (detailsEl) {
+            detailsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 150);
       }
 
       const fileInput = document.getElementById("regPhoto");
