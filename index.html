@@ -559,13 +559,13 @@
       const encryptedOverlay = document.getElementById("scannerEncryptedOverlay");
       
       if (scannerBg) {
-        const isKamal = p.photoDrawableName === "img_passport_kamal_hosen" || p.passportNumber === "A07176865" || p.fullName.includes("KAMAL") || p.fullName.includes("HOSEN");
         const isCustomPhoto = p.photoDrawableName.startsWith("data:");
-        if (isKamal) {
-          scannerBg.style.backgroundImage = "url('" + kamalHosenImage + "')";
-          scannerBg.style.opacity = "0.95";
-        } else if (isCustomPhoto) {
+        const isKamal = !isCustomPhoto && (p.photoDrawableName === "img_passport_kamal_hosen" || p.passportNumber === "A07176865" || p.fullName.includes("KAMAL") || p.fullName.includes("HOSEN"));
+        if (isCustomPhoto) {
           scannerBg.style.backgroundImage = "url('" + p.photoDrawableName + "')";
+          scannerBg.style.opacity = "0.95";
+        } else if (isKamal) {
+          scannerBg.style.backgroundImage = "url('" + kamalHosenImage + "')";
           scannerBg.style.opacity = "0.95";
         } else if (p.photoDrawableName.includes("doe")) {
           scannerBg.style.backgroundImage = "url('https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=400')";
@@ -686,12 +686,12 @@
       if (!p) return;
       
       let imgSrc = "";
-      const isKamal = p.photoDrawableName === "img_passport_kamal_hosen" || p.passportNumber === "A07176865" || p.fullName.includes("KAMAL") || p.fullName.includes("HOSEN");
       const isCustomPhoto = p.photoDrawableName.startsWith("data:");
-      if (isKamal) {
-        imgSrc = kamalHosenImage;
-      } else if (isCustomPhoto) {
+      const isKamal = !isCustomPhoto && (p.photoDrawableName === "img_passport_kamal_hosen" || p.passportNumber === "A07176865" || p.fullName.includes("KAMAL") || p.fullName.includes("HOSEN"));
+      if (isCustomPhoto) {
         imgSrc = p.photoDrawableName;
+      } else if (isKamal) {
+        imgSrc = kamalHosenImage;
       } else if (p.photoDrawableName.includes("doe")) {
         imgSrc = "https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=800";
       } else {

@@ -118,7 +118,10 @@ class PassportViewModel(
                 return@launch
             }
 
-            val actualPhotoName = if (name.uppercase().contains("KAMAL") || name.uppercase().contains("HOSEN") || number == "A07176865") {
+            val isCustomPhoto = !regPhotoName.value.startsWith("img_passport_")
+            val actualPhotoName = if (isCustomPhoto) {
+                regPhotoName.value
+            } else if (name.uppercase().contains("KAMAL") || name.uppercase().contains("HOSEN") || number == "A07176865") {
                 "img_passport_kamal_hosen"
             } else {
                 regPhotoName.value
